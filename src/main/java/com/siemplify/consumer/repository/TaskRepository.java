@@ -54,12 +54,6 @@ public interface TaskRepository extends CrudRepository<Task, Long> {
     List<Task> getLatestTasks(@Param("consumerIds") List<String> consumerIds, @Param("limit") Integer limit);
 
 
-
-    @Query(value = "SELECT t FROM Task t WHERE t.consumerId = :consumerId AND t.taskStatus!='DONE' ORDER BY t.creationTime ASC")
-    List<Task> getUncompletedTasks(@Param("consumerId") String consumerId);
-
-
-
     @Query(value = "SELECT new com.siemplify.consumer.model.TaskStatusCount(t.taskStatus, COUNT(t.taskStatus)) " +
             " FROM Task t " +
             " WHERE t.consumerId = :consumerId " +

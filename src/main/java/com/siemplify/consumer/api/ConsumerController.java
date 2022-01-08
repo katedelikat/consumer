@@ -1,6 +1,8 @@
 package com.siemplify.consumer.api;
 
 import com.siemplify.consumer.dto.ConsumerIdWrapper;
+import com.siemplify.consumer.dto.TaskErrorPerc;
+import com.siemplify.consumer.dto.TaskExecutionTime;
 import com.siemplify.consumer.model.Consumer;
 import com.siemplify.consumer.model.Task;
 import com.siemplify.consumer.model.TaskStatusCount;
@@ -41,11 +43,10 @@ public class ConsumerController {
     }
 
     @PostMapping("/tasks/latest/{limit}")
-    public ResponseEntity<List<Task>> getLatestTasks(@PathVariable("limit") Integer limit, @RequestBody @Nullable ConsumerIdWrapper consumerIds) {
+    public ResponseEntity<List<Task>> getLatestTasks(@PathVariable("limit") Integer limit, @RequestBody ConsumerIdWrapper consumerIds) {
 
         try {
-            List<String> requestedConsumerIds = consumerIds != null && consumerIds.getConsumerIds() != null ? consumerIds.getConsumerIds() : List.of(consumerId);
-            List<Task> latest = taskRepo.getLatestTasks(requestedConsumerIds, limit);
+            List<Task> latest = taskRepo.getLatestTasks(consumerIds.getConsumerIds(), limit);
             return ResponseEntity.ok(latest);
         } catch (Exception e) {
             return new ResponseEntity("Failed to retrieve latest tasks", HttpStatus.BAD_REQUEST);
@@ -63,19 +64,8 @@ public class ConsumerController {
         }
     }
 
-    @GetMapping("/tasks/uncompleted")
-    public ResponseEntity<List<Task>> getUncompleted() {
-
-        try {
-            List<Task> uncompleted = taskRepo.getUncompletedTasks(consumerId);
-            return ResponseEntity.ok(uncompleted);
-        } catch (Exception e) {
-            return new ResponseEntity("Failed to retrieve uncompleted tasks", HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    @GetMapping("/tasks/summary")
-    public ResponseEntity<List<TaskStatusCount>> getTaskSummary() {
+    @GetMapping("/tasks/summary/{consumerId}")
+    public ResponseEntity<List<TaskStatusCount>> getTaskSummary(@PathVariable("consumerId") String consumerId) {
 
         try {
             List<TaskStatusCount> summary = taskRepo.getTaskSummaryByStatus(consumerId);
@@ -85,23 +75,25 @@ public class ConsumerController {
         }
     }
 
-    @GetMapping("/tasks/time")
-    public ResponseEntity<Double> getAvgProcessingTime() {
+    @GetMapping("/tasks/time/{consumerId}")
+    public ResponseEntity<TaskExecutionTime> getAvgProcessingTime(@PathVariable("consumerId") String consumerId) {
 
         try {
             Double avgTime = taskRepo.getAvgExecutionTime(consumerId);
-            return ResponseEntity.ok(avgTime);
+            TaskExecutionTime taskExecutionTime = new TaskExecutionTime(consumerId, Math.round(avgTime * 100.0) / 100.0);
+            return ResponseEntity.ok(taskExecutionTime);
         } catch (Exception e) {
             return new ResponseEntity("Failed to retrieve avg execution time", HttpStatus.BAD_REQUEST);
         }
     }
 
-    @GetMapping("/tasks/errors")
-    public ResponseEntity<Double> getErrorPercentage() {
+    @GetMapping("/tasks/errors/{consumerId}")
+    public ResponseEntity<TaskErrorPerc> getErrorPercentage(@PathVariable("consumerId") String consumerId) {
 
         try {
             Double errorRate = taskRepo.getErrorRate(consumerId);
-            return ResponseEntity.ok(errorRate);
+            TaskErrorPerc taskErrorPerc = new TaskErrorPerc(consumerId, Math.round(errorRate * 100.0) / 100.0);
+            return ResponseEntity.ok(taskErrorPerc);
         } catch (Exception e) {
             return new ResponseEntity("Failed to retrieve percentage rate", HttpStatus.BAD_REQUEST);
         }

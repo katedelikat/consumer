@@ -3,17 +3,16 @@ package com.siemplify.consumer.repository;
 import com.siemplify.consumer.model.Task;
 import com.siemplify.consumer.model.TaskStatus;
 import com.siemplify.consumer.model.TaskStatusCount;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import javax.transaction.Transactional;
-import java.time.OffsetDateTime;
 import java.util.List;
 
 public interface TaskRepository extends CrudRepository<Task, Long> {
+
 
     @Transactional
     @Modifying
@@ -32,31 +31,42 @@ public interface TaskRepository extends CrudRepository<Task, Long> {
                     " FROM   task_sel" +
                     " WHERE  task_sel.id = t.id",
             nativeQuery = true)
-    void updateTaskStatusByLimit(@Param("consumerId") String consumerId, @Param("limit") Integer limit);
+    void updateTasksToBeProcessed(@Param("consumerId") String consumerId, @Param("limit") Integer limit);
+
+
 
     @Query(value = "SELECT t FROM Task t WHERE t.consumerId = :consumerId AND task_status='IN_PROGRESS'")
     List<Task> getTasksByConsumerId(@Param("consumerId") String consumerId);
 
+
+
     @Transactional
     @Modifying
     @Query(value = "UPDATE Task t" +
-                    " SET t.taskStatus = :taskStatus, t.modificationTime = NOW()" +
-                    " WHERE t.consumerId = :consumerId" +
-                    " AND t.taskStatus = 'IN_PROGRESS'")
-    void setTasksStatus(@Param("consumerId") String consumerId, @Param("taskStatus") TaskStatus taskStatus);
+            " SET t.taskStatus = :taskStatus, t.modificationTime = NOW()" +
+            " WHERE t.id = :taskId")
+    void setTaskStatus(@Param("taskId") Long taskId, @Param("taskStatus") TaskStatus taskStatus);
 
-    @Query(value = "SELECT * FROM tasks t WHERE t.consumer_id = :consumerId AND t.task_status='DONE' ORDER BY t.creation_time DESC LIMIT :limit",
+
+
+    @Query(value = "SELECT * FROM tasks t WHERE t.consumer_id IN(:consumerIds) AND t.task_status='DONE' ORDER BY t.creation_time DESC LIMIT :limit",
             nativeQuery = true)
-    List<Task> getLatestTasks(@Param("consumerId") String consumerId, @Param("limit") Integer limit);
+    List<Task> getLatestTasks(@Param("consumerIds") List<String> consumerIds, @Param("limit") Integer limit);
+
+
 
     @Query(value = "SELECT t FROM Task t WHERE t.consumerId = :consumerId AND t.taskStatus!='DONE' ORDER BY t.creationTime ASC")
     List<Task> getUncompletedTasks(@Param("consumerId") String consumerId);
+
+
 
     @Query(value = "SELECT new com.siemplify.consumer.model.TaskStatusCount(t.taskStatus, COUNT(t.taskStatus)) " +
             " FROM Task t " +
             " WHERE t.consumerId = :consumerId " +
             " GROUP BY t.taskStatus")
     List<TaskStatusCount> getTaskSummaryByStatus(@Param("consumerId") String consumerId);
+
+
 
     @Query(value = "SELECT " +
             "cast(errs as decimal) /total FROM" +
@@ -67,10 +77,7 @@ public interface TaskRepository extends CrudRepository<Task, Long> {
             nativeQuery = true)
     Double getErrorRate(@Param("consumerId") String consumerId);
 
-    /*
-    select AVG(modification_time-creation_time) from tasks
-where consumer_id='ABC' and task_status = 'DONE'
-     */
+
 
     @Query(value = "SELECT AVG(extract(epoch from modification_time) - extract(epoch from creation_time)) from tasks" +
             " WHERE consumer_id= :consumerId and task_status = 'DONE'",

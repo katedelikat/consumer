@@ -1,10 +1,7 @@
 package com.siemplify.consumer.model;
 
 
-import org.hibernate.annotations.Type;
-
 import javax.persistence.*;
-import java.sql.Types;
 import java.time.OffsetDateTime;
 
 @Entity

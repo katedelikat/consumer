@@ -14,6 +14,10 @@ import java.util.List;
 public interface TaskRepository extends CrudRepository<Task, Long> {
 
 
+    /*
+    Update tasks as IN_PROGRESS, according to the time of the creation.
+    Number of tasks updated will be according to the bulk size (passed as @limit)
+     */
     @Transactional
     @Modifying
     @Query(value =

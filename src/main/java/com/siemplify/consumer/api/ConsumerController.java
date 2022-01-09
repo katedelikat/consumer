@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,6 +41,18 @@ public class ConsumerController {
         }
     }
 
+    /**
+     * Retrieves @limit latest task for given @consumerIds.
+     * @Consumer ids are passed in the bodyof the method.
+     * Example:
+     * POST http://127.0.0.1:9000/api/consumer/tasks/latest/10
+     * {
+     *     "consumer_ids": ["ABC", "XYZ"]
+     * }
+     * @param limit
+     * @param consumerIds
+     * @return
+     */
     @PostMapping("/tasks/latest/{limit}")
     public ResponseEntity<List<Task>> getLatestTasks(@PathVariable("limit") Integer limit, @RequestBody ConsumerIdWrapper consumerIds) {
 
@@ -53,7 +64,22 @@ public class ConsumerController {
         }
     }
 
-    @PostMapping("/config")
+    /**
+     * This api changes the configuration of consumer.
+     * Currently only bulk size is supported.
+     * Consumer checks if the configuration was changed every 1 minute
+     * Example:
+     * PUT http://127.0.0.1:9000/api/consumer/config
+     * [
+     *     {
+     *         "id": "ABC",
+     *         "bulkSize": 1
+     *     }
+     * ]
+     * @param consumerConfig
+     * @return
+     */
+    @PutMapping("/config")
     public ResponseEntity<String> setConsumerConfig(@RequestBody List<Consumer> consumerConfig) {
 
         try {
@@ -64,6 +90,13 @@ public class ConsumerController {
         }
     }
 
+    /**
+     * This api retrieves summary of tasks by their status, aka how many tasks are there for each status
+     * Example:
+     * GET http://127.0.0.1:9000/api/consumer/tasks/summary/ABC
+     * @param consumerId
+     * @return
+     */
     @GetMapping("/tasks/summary/{consumerId}")
     public ResponseEntity<List<TaskStatusCount>> getTaskSummary(@PathVariable("consumerId") String consumerId) {
 
@@ -75,6 +108,14 @@ public class ConsumerController {
         }
     }
 
+    /**
+     * This api return average execution of time of tasks for giver consumer.
+     * Execution time is calculated since the task si submitted until executed successfully.
+     * Example:
+     * GET http://127.0.0.1:9000/api/consumer/tasks/time/ABC
+     * @param consumerId
+     * @return
+     */
     @GetMapping("/tasks/time/{consumerId}")
     public ResponseEntity<TaskExecutionTime> getAvgProcessingTime(@PathVariable("consumerId") String consumerId) {
 
@@ -87,6 +128,13 @@ public class ConsumerController {
         }
     }
 
+    /**
+     * This API returns error rate of task processing for given consumer.
+     * Example:
+     * GET http://127.0.0.1:9000/api/consumer/tasks/errors/ABC
+     * @param consumerId
+     * @return
+     */
     @GetMapping("/tasks/errors/{consumerId}")
     public ResponseEntity<TaskErrorPerc> getErrorPercentage(@PathVariable("consumerId") String consumerId) {
 
